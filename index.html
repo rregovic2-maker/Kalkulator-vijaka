@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Kalkulator Vijaka ERP</title>
+<style>
+body { font-family: Arial; max-width: 600px; margin:auto; padding:20px; }
+input,select,button { width:100%; padding:8px; margin:5px 0; }
+h2 { text-align:center; }
+</style>
+</head>
+
+<body>
+
+<h2>KALKULATOR VIJAKA - ERP</h2>
+
+<label>Firma</label>
+<input id="firma" value="Moja Firma d.o.o.">
+
+<label>Kupac</label>
+<input id="kupac" value="Kupac d.o.o.">
+
+<label>Promjer (M)</label>
+<input id="d" type="number" value="20">
+
+<label>Dužina (mm)</label>
+<input id="L" type="number" value="100">
+
+<label>Klasa</label>
+<select id="klasa">
+<option>4.6</option>
+<option>5.6</option>
+<option selected>8.8</option>
+<option>10.9</option>
+<option>12.9</option>
+</select>
+
+<label>Količina</label>
+<input id="kolicina" value="100">
+
+<button onclick="calc()">IZRAČUNAJ</button>
+
+<hr>
+
+<h3 id="out"></h3>
+
+<button onclick="pdf()">PDF PONUDA</button>
+
+<script>
+
+const DIN={
+20:{80:0.256,100:0.304,120:0.352},
+24:{80:0.384,100:0.453,120:0.522},
+30:{100:0.771},
+36:{100:1.182},
+48:{100:2.276}
+};
+
+let last={};
+
+function masa(d,L){
+ if(DIN[d] && DIN[d][L]) return DIN[d][L];
+
+ if(DIN[d]){
+  let keys=Object.keys(DIN[d]).map(Number).sort((a,b)=>a-b);
+  let m=keys[0],v=keys[keys.length-1];
+
+  for(let i=0;i<keys.length-1;i++){
+    if(L>=keys[i] && L<=keys[i+1]){
+      m=keys[i]; v=keys[i+1];
+    }
+  }
+  return DIN[d][m]+(DIN[d][v]-DIN[d][m])*((L-m)/(v-m));
+ }
+
+ return Math.PI*Math.pow(d/2000,2)*(L/1000)*7850;
+}
+
+function tech(d){
+ if(d<=20) return "Kovanje + valjanje";
+ if(d<=36) return "Kovanje + tokarenje + valjanje";
+ return "Tokarenje";
+}
+
+function calc(){
+ let d=+document.getElementById("d").value;
+ let L=+document.getElementById("L").value;
+ let k=+document.getElementById("kolicina").value;
+ let kl=document.getElementById("klasa").value;
+
+ let t=masa(d,L);
+ let term=(kl=="4.6"||kl=="5.6")?0:t*1.5;
+
+ let cij=(t*1.6)+(0.25+0.2+0.4+0.25+0.3+0.2)+term;
+ let uk=cij*k;
+
+ last={d,L,k,kl,t,cij,uk};
+
+ document.getElementById("out").innerHTML=`
+ Tehnologija: ${tech(d)}<br>
+ Težina: ${t.toFixed(3)} kg<br>
+ Cijena/kom: ${cij.toFixed(2)} €<br>
+ <b>Ukupno: ${uk.toFixed(2)} €</b>
+ `;
+}
+
+function pdf(){
+
+ let f=document.getElementById("firma").value;
+ let kup=document.getElementById("kupac").value;
+
+ let w=window.open();
+ w.document.write(`
+ <h2>${f}</h2>
+ <hr>
+ <h3>PONUDA</h3>
+ Kupac: ${kup}<br><br>
+ Vijak DIN 931<br>
+ M${last.d} x ${last.L}<br>
+ Klasa ${last.kl}<br><br>
+
+ Težina: ${last.t.toFixed(3)} kg<br>
+ Cijena: ${last.cij.toFixed(2)} €<br>
+ Količina: ${last.k}<br>
+
+ <h3>UKUPNO: ${last.uk.toFixed(2)} €</h3>
+ `);
+ w.print();
+}
+
+</script>
+
+</body>
+</html>
